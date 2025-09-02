@@ -1,23 +1,17 @@
-﻿using Devspaces.Support;
-using HealthChecks.UI.Client;
+﻿using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator.Config;
-using Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator.Filters.Basket.API.Infrastructure.Filters;
-using Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator.Infrastructure;
-using Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
+using Serilog;
 
 namespace Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator
 {
@@ -25,76 +19,159 @@ namespace Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator
     {
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            Log.Information("Startup constructed. Has configuration: {HasConfig}", Configuration != null);
         }
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+        // ----------------------------
+        // ConfigureServices
+        // ----------------------------
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHealthChecks()
-                .AddCheck("self", () => HealthCheckResult.Healthy())
-                .AddUrlGroup(new Uri(Configuration["CatalogUrlHC"]), name: "catalogapi-check", tags: new string[] { "catalogapi" })
-                .AddUrlGroup(new Uri(Configuration["OrderingUrlHC"]), name: "orderingapi-check", tags: new string[] { "orderingapi" })
-                .AddUrlGroup(new Uri(Configuration["BasketUrlHC"]), name: "basketapi-check", tags: new string[] { "basketapi" })
-                .AddUrlGroup(new Uri(Configuration["IdentityUrlHC"]), name: "identityapi-check", tags: new string[] { "identityapi" })
-                .AddUrlGroup(new Uri(Configuration["MarketingUrlHC"]), name: "marketingapi-check", tags: new string[] { "marketingapi" })
-                .AddUrlGroup(new Uri(Configuration["PaymentUrlHC"]), name: "paymentapi-check", tags: new string[] { "paymentapi" })
-                .AddUrlGroup(new Uri(Configuration["LocationUrlHC"]), name: "locationapi-check", tags: new string[] { "locationapi" });
+            Log.Information("ConfigureServices starting for WebShoppingAgg");
 
+            // Dump common env/config values up front
+            Log.Information("ASPNETCORE_ENVIRONMENT = {Env}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+            Log.Information("ASPNETCORE_URLS        = {Urls}", Environment.GetEnvironmentVariable("ASPNETCORE_URLS"));
+            Log.Information("PATH_BASE              = {PathBase}", Configuration["PATH_BASE"]);
+            Log.Information("IdentityUrlExternal    = {IdentityUrlExternal}", Configuration["IdentityUrlExternal"]);
+
+            // Pull the health check URLs and log them
+            var catalogUrlHC  = Configuration["CatalogUrlHC"];
+            var orderingUrlHC = Configuration["OrderingUrlHC"];
+            var basketUrlHC   = Configuration["BasketUrlHC"];
+            var identityUrlHC = Configuration["IdentityUrlHC"];
+            var paymentUrlHC  = Configuration["PaymentUrlHC"];
+
+            Log.Information("CatalogUrlHC  = {Url}", catalogUrlHC);
+            Log.Information("OrderingUrlHC = {Url}", orderingUrlHC);
+            Log.Information("BasketUrlHC   = {Url}", basketUrlHC);
+            Log.Information("IdentityUrlHC = {Url}", identityUrlHC);
+            Log.Information("PaymentUrlHC  = {Url}", paymentUrlHC);
+
+            // Health checks + per-URL validation with logging
+            var hc = services.AddHealthChecks()
+                .AddCheck("self", () => HealthCheckResult.Healthy());
+
+            AddUrlGroupLogged(hc, catalogUrlHC,  "catalogapi-check",  "catalogapi");
+            AddUrlGroupLogged(hc, orderingUrlHC, "orderingapi-check", "orderingapi");
+            AddUrlGroupLogged(hc, basketUrlHC,   "basketapi-check",   "basketapi");
+            AddUrlGroupLogged(hc, identityUrlHC, "identityapi-check", "identityapi");
+            AddUrlGroupLogged(hc, paymentUrlHC,  "paymentapi-check",  "paymentapi");
+
+            Log.Information("Registering MVC/Auth/Devspaces/App/Grpc services...");
             services.AddCustomMvc(Configuration)
-                .AddCustomAuthentication(Configuration)
-                .AddDevspaces()
-                .AddApplicationServices();
+                    .AddCustomAuthentication(Configuration)
+                    .AddDevspaces()
+                    .AddApplicationServices()
+                    .AddGrpcServices();
+
+            Log.Information("ConfigureServices completed");
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        // Helper that validates & logs before adding the URL group
+        private static void AddUrlGroupLogged(IHealthChecksBuilder builder, string url, string name, string tag)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                Log.Error("{Name}: configuration value is null/empty; skipping health check.", name);
+                return;
+            }
+
+            try
+            {
+                var uri = new Uri(url, UriKind.Absolute);
+                Log.Information("Adding health check {Name} -> {Uri}", name, uri);
+                builder.AddUrlGroup(uri, name: name, tags: new[] { tag });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "{Name}: invalid URI value '{Url}'; skipping health check.", name, url);
+            }
+        }
+
+        // ----------------------------
+        // Configure
+        // ----------------------------
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            var log = loggerFactory.CreateLogger<Startup>();
+            log.LogInformation("Configure starting. Environment={Env} ContentRoot={Root}",
+                env.EnvironmentName, env.ContentRootPath);
+
             var pathBase = Configuration["PATH_BASE"];
             if (!string.IsNullOrEmpty(pathBase))
             {
-                loggerFactory.CreateLogger<Startup>().LogDebug("Using PATH BASE '{pathBase}'", pathBase);
+                log.LogInformation("Using PATH_BASE: {PathBase}", pathBase);
                 app.UsePathBase(pathBase);
+            }
+            else
+            {
+                log.LogInformation("No PATH_BASE configured.");
             }
 
             if (env.IsDevelopment())
             {
+                log.LogInformation("Environment is Development: enabling DeveloperExceptionPage");
                 app.UseDeveloperExceptionPage();
             }
 
+            log.LogInformation("Enabling HTTPS redirection");
             app.UseHttpsRedirection();
 
-            app.UseSwagger().UseSwaggerUI(c =>
+            // Swagger + UI
+            try
             {
-                c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/v1/swagger.json", "Purchase BFF V1");
+                var swaggerBase = !string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty;
+                var swaggerEndpoint = $"{swaggerBase}/swagger/v1/swagger.json";
+                log.LogInformation("Configuring Swagger. Endpoint={SwaggerEndpoint}", swaggerEndpoint);
 
-                c.OAuthClientId("webshoppingaggswaggerui");
-                c.OAuthClientSecret(string.Empty);
-                c.OAuthRealm(string.Empty);
-                c.OAuthAppName("web shopping bff Swagger UI");
-            });
+                var identityExternal = Configuration.GetValue<string>("IdentityUrlExternal");
+                log.LogInformation("Swagger OAuth IdentityUrlExternal={IdentityUrlExternal}", identityExternal);
 
+                app.UseSwagger()
+                   .UseSwaggerUI(c =>
+                   {
+                       c.SwaggerEndpoint(swaggerEndpoint, "Purchase BFF V1");
+                       c.OAuthClientId("webshoppingaggswaggerui");
+                       c.OAuthClientSecret(string.Empty);
+                       c.OAuthRealm(string.Empty);
+                       c.OAuthAppName("web shopping bff Swagger UI");
+                   });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed configuring Swagger");
+                throw;
+            }
+
+            log.LogInformation("Adding routing, CORS, authentication, authorization");
             app.UseRouting();
             app.UseCors("CorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
 
+            log.LogInformation("Mapping endpoints: controllers + /hc + /liveness");
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapDefaultControllerRoute();
                 endpoints.MapControllers();
-                endpoints.MapHealthChecks("/hc", new HealthCheckOptions()
+
+                endpoints.MapHealthChecks("/hc", new HealthCheckOptions
                 {
                     Predicate = _ => true,
                     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
                 });
+
                 endpoints.MapHealthChecks("/liveness", new HealthCheckOptions
                 {
                     Predicate = r => r.Name.Contains("self")
                 });
             });
+
+            log.LogInformation("Configure completed");
         }
     }
 
@@ -102,20 +179,24 @@ namespace Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator
     {
         public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
+            Log.Information("Configuring authentication (JWT Bearer)");
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
 
             var identityUrl = configuration.GetValue<string>("urls:identity");
+            Log.Information("Identity Authority (urls:identity) = {IdentityUrl}", identityUrl);
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
             })
             .AddJwtBearer(options =>
             {
                 options.Authority = identityUrl;
                 options.RequireHttpsMetadata = false;
                 options.Audience = "webshoppingagg";
+                Log.Information("JwtBearer configured: Authority={Authority} Audience={Audience} HttpsMetadata={Https}",
+                    options.Authority, options.Audience, options.RequireHttpsMetadata);
             });
 
             return services;
@@ -123,16 +204,24 @@ namespace Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator
 
         public static IServiceCollection AddCustomMvc(this IServiceCollection services, IConfiguration configuration)
         {
+            Log.Information("Configuring MVC + options + Swagger");
+
             services.AddOptions();
             services.Configure<UrlsConfig>(configuration.GetSection("urls"));
+            LogUrlsSection(configuration);
 
             services.AddControllers()
-                .AddNewtonsoftJson();
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.WriteIndented = true;
+                    Log.Information("System.Text.Json configured: WriteIndented={Indented}", options.JsonSerializerOptions.WriteIndented);
+                });
 
             services.AddSwaggerGen(options =>
             {
-                options.DescribeAllEnumsAsStrings();
+                Log.Information("Configuring SwaggerGen");
 
+                options.DescribeAllEnumsAsStrings();
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "Shopping Aggregator for Web Clients",
@@ -140,17 +229,19 @@ namespace Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator
                     Description = "Shopping Aggregator for Web Clients"
                 });
 
+                var idExternal = configuration.GetValue<string>("IdentityUrlExternal");
+                Log.Information("Swagger OAuth uses IdentityUrlExternal={IdentityUrlExternal}", idExternal);
+
                 options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
                 {
                     Type = SecuritySchemeType.OAuth2,
-                    Flows = new OpenApiOAuthFlows()
+                    Flows = new OpenApiOAuthFlows
                     {
-                        Implicit = new OpenApiOAuthFlow()
+                        Implicit = new OpenApiOAuthFlow
                         {
-                            AuthorizationUrl = new Uri($"{configuration.GetValue<string>("IdentityUrlExternal")}/connect/authorize"),
-                            TokenUrl = new Uri($"{configuration.GetValue<string>("IdentityUrlExternal")}/connect/token"),
-
-                            Scopes = new Dictionary<string, string>()
+                            AuthorizationUrl = new Uri($"{idExternal}/connect/authorize"),
+                            TokenUrl = new Uri($"{idExternal}/connect/token"),
+                            Scopes = new Dictionary<string, string>
                             {
                                 { "webshoppingagg", "Shopping Aggregator for Web Clients" }
                             }
@@ -163,42 +254,80 @@ namespace Microsoft.eShopOnContainers.Web.Shopping.HttpAggregator
 
             services.AddCors(options =>
             {
+                Log.Information("Adding CORS policy 'CorsPolicy' (AllowAnyHeader/Method, credentials allowed)");
                 options.AddPolicy("CorsPolicy",
                     builder => builder
-                    .SetIsOriginAllowed((host) => true)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials());
+                        .SetIsOriginAllowed(_ => true)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
             });
 
+            Log.Information("AddCustomMvc completed");
             return services;
         }
+
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-            //register delegating handlers
+            Log.Information("Registering application services, handlers, HttpClient(s)");
+
             services.AddTransient<HttpClientAuthorizationDelegatingHandler>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-            //register http services
-
-            services.AddHttpClient<IBasketService, BasketService>()
-                .AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>()
-                .AddDevspacesSupport();
-
-            services.AddHttpClient<ICatalogService, CatalogService>()
-                .AddDevspacesSupport();
 
             services.AddHttpClient<IOrderApiClient, OrderApiClient>()
                 .AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>()
                 .AddDevspacesSupport();
 
-            services.AddHttpClient<IOrderingService, OrderingService>()
-                .AddHttpMessageHandler<HttpClientAuthorizationDelegatingHandler>()
-                .AddDevspacesSupport();
-
+            Log.Information("HttpClient IOrderApiClient registered with authorization delegating handler");
             return services;
         }
 
+        public static IServiceCollection AddGrpcServices(this IServiceCollection services)
+        {
+            Log.Information("Registering gRPC services/clients");
+            services.AddTransient<GrpcExceptionInterceptor>();
 
+            services.AddScoped<IBasketService, BasketService>();
+            services.AddGrpcClient<Basket.BasketClient>((sp, options) =>
+            {
+                var urls = sp.GetRequiredService<IOptions<UrlsConfig>>().Value;
+                Log.Information("Configuring gRPC BasketClient -> {Address}", urls.GrpcBasket);
+                options.Address = new Uri(urls.GrpcBasket);
+            }).AddInterceptor<GrpcExceptionInterceptor>();
+
+            services.AddScoped<ICatalogService, CatalogService>();
+            services.AddGrpcClient<Catalog.CatalogClient>((sp, options) =>
+            {
+                var urls = sp.GetRequiredService<IOptions<UrlsConfig>>().Value;
+                Log.Information("Configuring gRPC CatalogClient -> {Address}", urls.GrpcCatalog);
+                options.Address = new Uri(urls.GrpcCatalog);
+            }).AddInterceptor<GrpcExceptionInterceptor>();
+
+            services.AddScoped<IOrderingService, OrderingService>();
+            services.AddGrpcClient<OrderingGrpc.OrderingGrpcClient>((sp, options) =>
+            {
+                var urls = sp.GetRequiredService<IOptions<UrlsConfig>>().Value;
+                Log.Information("Configuring gRPC OrderingGrpcClient -> {Address}", urls.GrpcOrdering);
+                options.Address = new Uri(urls.GrpcOrdering);
+            }).AddInterceptor<GrpcExceptionInterceptor>();
+
+            Log.Information("AddGrpcServices completed");
+            return services;
+        }
+
+        // Helper: log the "urls" section contents
+        private static void LogUrlsSection(IConfiguration configuration)
+        {
+            var u = configuration.GetSection("urls");
+            Log.Information("urls:basket     = {Val}", u["basket"]);
+            Log.Information("urls:catalog    = {Val}", u["catalog"]);
+            Log.Information("urls:orders     = {Val}", u["orders"]);
+            Log.Information("urls:identity   = {Val}", u["identity"]);
+            Log.Information("urls:grpcBasket = {Val}", u["grpcBasket"]);
+            Log.Information("urls:grpcCatalog= {Val}", u["grpcCatalog"]);
+            Log.Information("urls:grpcOrdering= {Val}", u["grpcOrdering"]);
+        }
     }
+
+
 }

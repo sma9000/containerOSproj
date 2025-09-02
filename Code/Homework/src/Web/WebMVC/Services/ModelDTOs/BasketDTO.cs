@@ -1,37 +1,32 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿namespace WebMVC.Services.ModelDTOs;
 
-namespace WebMVC.Services.ModelDTOs
+public record BasketDTO
 {
-    public class BasketDTO
-    {
-        [Required]
-        public string City { get; set; }
-        [Required]
-        public string Street { get; set; }
-        [Required]
-        public string State { get; set; }
-        [Required]
-        public string Country { get; set; }
+    [Required]
+    public string City { get; init; }
+    [Required]
+    public string Street { get; init; }
+    [Required]
+    public string State { get; init; }
+    [Required]
+    public string Country { get; init; }
 
-        public string ZipCode { get; set; }
-        [Required]
-        public string CardNumber { get; set; }
-        [Required]
-        public string CardHolderName { get; set; }
+    public string ZipCode { get; init; }
+    [Required]
+    public string CardNumber { get; init; }
+    [Required]
+    public string CardHolderName { get; init; }
 
-        [Required]
-        public DateTime CardExpiration { get; set; }
+    [Required]
+    public DateTime CardExpiration { get; init; }
 
-        [Required]
-        public string CardSecurityNumber { get; set; }
+    [Required]
+    public string CardSecurityNumber { get; init; }
 
-        public int CardTypeId { get; set; }
+    public int CardTypeId { get; init; }
 
-        public string Buyer { get; set; }
+    public string Buyer { get; init; }
 
-        [Required]
-        public Guid RequestId { get; set; }
-    }
+    [Required]
+    public Guid RequestId { get; init; }
 }
-

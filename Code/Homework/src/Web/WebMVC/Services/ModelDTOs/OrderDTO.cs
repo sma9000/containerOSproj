@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿namespace WebMVC.Services.ModelDTOs;
 
-namespace WebMVC.Services.ModelDTOs
+public record OrderDTO
 {
-    public class OrderDTO
-    {
-        [Required]
-        public string OrderNumber { get; set; }
-    }
+    [Required]
+    public string OrderNumber { get; init; }
 }
