@@ -47,7 +47,7 @@ Complete the following Dockerfile
 
 3. Build the Docker image:
    ```bash
-   docker build -t voting .
+   docker build -t voting 
    ```
 
 
