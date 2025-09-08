@@ -53,5 +53,5 @@ Complete the following Dockerfile
 
 4. Run  Docker image:
    ```bash
-   docker run -it voting .
+   docker run -it voting 
    ```

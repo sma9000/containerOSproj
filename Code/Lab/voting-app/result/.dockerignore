@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# VCS & editor noise
+.git
+.gitignore
+.vscode
+*.log
+.DS_Store
+*.swp
+*.swo
+
+# Builds & caches
+dist
+build
+coverage
+.cache
+.next
+out
+.tmp
+tmp
+.nyc_output
+
+# Env / secrets
+.env
+.env.*local
+
+# Package managers
+.pnpm-store
+.pnp*
+.yarn/*
+!/.yarn/releases
+!/.yarn/plugins
+!/.yarn/sdks
+!/.yarn/versions
