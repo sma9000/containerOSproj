@@ -46,7 +46,7 @@ You will be `Build` Dockerfiles for the following key services: Review each serv
 Example for Catalog.API:
 ```bash
 cd src
-docker build -t catalog-api -f Services/Catalog/Catalog.API/Dockerfile
+docker build -t catalog-api -f Services/Catalog/Catalog.API/Dockerfile .
 
 ```
 
@@ -58,10 +58,10 @@ Repeat for each microservice.
 
 1. Create a public DockerHub account
 2. Push docker images to DockerHub
-4. Submit/Email screenhot for your DockerHub or docker hub account
+4. Submit/Email screenhot for your DockerHub 
 
 ---
 
 ## ⏱️ Deadline
-Submit before the next class.
+Submit before the next Homework date.
 
