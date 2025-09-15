@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: result
+  name: result
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: result
+  template:
+    metadata:
+      labels:
+        app: result
+    spec:
+      hostAliases:
+        - ip: <PUT_REDIS_IP_HERE>
+          hostnames: ["redis"]
+        - ip: <PUT_REDIS_IP_HERE>
+          hostnames: ["db"]  
+      containers:
+      - image: magdysalem/voting-result:latest
+        name: result
+        ports:
+        - containerPort: 80
+          name: result

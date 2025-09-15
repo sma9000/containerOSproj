@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  # Simple key/values for env
+  APP_TITLE: "Example Voting App - K8s Demo"
+  REDIS_HOST: "redis-svc"
+  POSTGRES_HOST: "postgres-svc"
+  POSTGRES_DB: "votes"
+  FEATURE_FLAGS: "showResults=true,useCache=true"
+
+  # Example file content to mount as a config file
+  appsettings.yaml: |
+    app:
+      title: "Example Voting App - Config from ConfigMap"
+      features:
+        showResults: true
+        useCache: true
+    backend:
+      redisHost: "redis-svc"
+      postgresHost: "postgres-svc"
+      database: "votes"

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-redis
+  labels: { app: vote-redis }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-redis }
+  template:
+    metadata:
+      labels: { app: vote-redis }
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        args: ["--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 10
+          periodSeconds: 10

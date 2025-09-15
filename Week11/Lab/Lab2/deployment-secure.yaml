@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-web
+  namespace: security-lab
+  labels: { app: secure-web }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: secure-web }
+  template:
+    metadata:
+      labels: { app: secure-web }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: web
+        image: nginx:1.27-alpine
+        ports:
+        - containerPort: 80
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: web-content
+          mountPath: /srv
+        - name: secret-vol
+          mountPath: /etc/creds
+          readOnly: true
+        env:
+        - name: DEMO_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DEMO_USERNAME
+        - name: DEMO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DEMO_PASSWORD
+      volumes:
+      - name: web-content
+        emptyDir: {}
+      - name: secret-vol
+        secret:
+          secretName: app-secrets

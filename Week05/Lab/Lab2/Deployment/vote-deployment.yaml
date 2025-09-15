@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vote
+  name: vote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote
+  template:
+    metadata:
+      labels:
+        app: vote
+    spec:
+      hostAliases:
+        - ip: <PUT_REDIS_IP_HERE>
+          hostnames: ["redis"]
+        - ip: <PUT_REDIS_IP_HERE>
+          hostnames: ["db"]  
+      containers:
+      - image:  <Your image reference>
+        name: vote
+        ports:
+        - containerPort: 80
+          name: vote

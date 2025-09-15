@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-web
+  labels: { app: vote-web }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-web }
+  template:
+    metadata:
+      labels: { app: vote-web }
+    spec:
+      containers:
+      - name: web
+        image: dockersamples/examplevotingapp_vote:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-svc
+  labels: { app: vote-web }
+spec:
+  type: ClusterIP
+  selector: { app: vote-web }
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80

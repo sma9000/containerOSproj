@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: worker
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      hostAliases:
+        - ip: <PUT_REDIS_IP_HERE>
+          hostnames: ["redis"]
+        - ip: <PUT_REDIS_IP_HERE>
+          hostnames: ["db"]  
+      containers:
+      - image:  <Your image reference>
+        name: worker

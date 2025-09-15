@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-vote-flows
+spec:
+  podSelector: {}  # rules apply cluster-wide in namespace via from/to selectors below
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow web -> redis
+  - from:
+    - podSelector:
+        matchLabels:
+          app: vote-web
+    ports:
+    - protocol: TCP
+      port: 6379
+    to:
+    - podSelector:
+        matchLabels:
+          app: vote-redis
+  # Allow worker -> redis
+  - from:
+    - podSelector:
+        matchLabels:
+          app: vote-worker
+    ports:
+    - protocol: TCP
+      port: 6379
+    to:
+    - podSelector:
+        matchLabels:
+          app: vote-redis
+  # Allow worker -> postgres
+  - from:
+    - podSelector:
+        matchLabels:
+          app: vote-worker
+    ports:
+    - protocol: TCP
+      port: 5432
+    to:
+    - podSelector:
+        matchLabels:
+          app: vote-postgres

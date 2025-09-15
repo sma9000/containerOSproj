@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen
+  labels: { app: loadgen }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: loadgen }
+  template:
+    metadata:
+      labels: { app: loadgen }
+    spec:
+      containers:
+      - name: busybox
+        image: busybox:1.36
+        command: ["sh","-c"]
+        args:
+        - >
+          echo "Starting load..." ;
+          while true; do
+            wget -q -O- http://web-svc/ >/dev/null || true ;
+          done

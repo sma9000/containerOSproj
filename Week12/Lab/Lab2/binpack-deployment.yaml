@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: binpack
+  labels: { app: binpack }
+spec:
+  replicas: 12
+  selector:
+    matchLabels: { app: binpack }
+  template:
+    metadata:
+      labels: { app: binpack }
+    spec:
+      containers:
+      - name: stress
+        image: busybox:1.36
+        command: ["sh","-c"]
+        args:
+        - >
+          while true; do sha256sum /dev/urandom | head -c 1000 >/dev/null; done
+        resources:
+          requests:
+            cpu: "800m"
+            memory: "600Mi"
+          limits:
+            cpu: "1000m"
+            memory: "800Mi"

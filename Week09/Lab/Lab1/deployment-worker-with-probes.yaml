@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-worker
+  labels: { app: vote-worker }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-worker }
+  template:
+    metadata:
+      labels: { app: vote-worker }
+    spec:
+      containers:
+      - name: worker
+        image: 
+        # Trivial exec readiness probe just to illustrate the mechanism
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "echo ready"]
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        # No liveness by default for the worker (can be added if the app exposes a check)

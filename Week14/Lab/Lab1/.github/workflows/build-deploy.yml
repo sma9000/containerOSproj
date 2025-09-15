@@ -1,0 +1,33 @@
+name: Build and Deploy Voting App
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - run: docker build -t ${{ secrets.DOCKER_USERNAME }}/vote-web:${{ github.sha }} ./vote
+      - run: docker push ${{ secrets.DOCKER_USERNAME }}/vote-web:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: v1.30.0
+      - run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENTS }}" > $HOME/.kube/config
+      - run: |
+          kubectl set image deployment/vote-web vote-web=${{ secrets.DOCKER_USERNAME }}/vote-web:${{ github.sha }} -n vote
+          kubectl rollout status deployment/vote-web -n vote

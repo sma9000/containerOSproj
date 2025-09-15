@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vote-pod
+  labels:
+    app: vote
+    tier: web
+spec:
+  hostAliases:
+    - ip: "<PUT_REDIS_IP_HERE>"
+      hostnames: ["redis"]
+    - ip: "<PUT_POSTGRES_IP_HERE>"
+      hostnames: ["db"]
+  containers:
+  - name: vote
+    image: <Your image reference>
+    ports:
+    - containerPort: 80
+    env:
+      - name: POSTGRES_DB
+        value: "votes"
+      - name: POSTGRES_HOST
+        value: "db"
+      - name: POSTGRES_PASSWORD
+        value: "postgres"
+      - name: POSTGRES_USER
+        value: "postgres"
+      - name: REDIS_HOST
+        value: "redis"
+

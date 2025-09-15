@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-web
+  labels: { app: vote-web }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-web }
+  template:
+    metadata:
+      labels: { app: vote-web }
+    spec:
+      volumes:
+      # Shared scratch space for all containers in this Pod
+      - name: scratch
+        emptyDir: {}
+      # Mount ConfigMap as volume
+      - name: config-vol
+        configMap:
+          name: app-config
+      # Mount Secret as volume
+      - name: secret-vol
+        secret:
+          secretName: app-secrets
+      # Downward API volume
+      - name: podinfo
+        downwardAPI:
+          items:
+          - path: "name"
+            fieldRef:
+              fieldPath: metadata.name
+          - path: "namespace"
+            fieldRef:
+              fieldPath: metadata.namespace
+      # HostPath volume (for Minikube demo)
+      - name: hostdata
+        hostPath:
+          path: /mnt/hostdata
+          type: DirectoryOrCreate
+
+      containers:
+      - name: web
+        image: 
+        ports:
+        - containerPort: 80
+        env:
+        - name: APP_TITLE
+          valueFrom: { configMapKeyRef: { name: app-config, key: APP_TITLE } }
+        volumeMounts:
+        - name: scratch
+          mountPath: /scratch
+        - name: config-vol
+          mountPath: /etc/config
+        - name: secret-vol
+          mountPath: /etc/creds
+        - name: podinfo
+          mountPath: /etc/podinfo
+          readOnly: true
+        - name: hostdata
+          mountPath: /hostdata
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-worker
+  labels: { app: vote-worker }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-worker }
+  template:
+    metadata:
+      labels: { app: vote-worker }
+    spec:
+      containers:
+      - name: worker
+        image: 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-redis
+  labels: { app: vote-redis }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-redis }
+  template:
+    metadata:
+      labels: { app: vote-redis }
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        args: ["--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-postgres
+  labels: { app: vote-postgres }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-postgres }
+  template:
+    metadata:
+      labels: { app: vote-postgres }
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - { name: POSTGRES_USER, value: "postgres" }
+        - { name: POSTGRES_PASSWORD, value: "postgres" }
+        - { name: POSTGRES_DB, value: "votes" }
+        ports:
+        - containerPort: 5432
+---        
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vote-result
+  name: vote-result
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote-result
+  template:
+    metadata:
+      labels:
+        app: vote-result
+    spec:
+      hostAliases:
+      containers:
+      - image: 
+        name: vote-result
+        ports:
+        - containerPort: 80
+          name: vote-result

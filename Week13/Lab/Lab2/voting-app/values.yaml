@@ -1,0 +1,59 @@
+global:
+  imagePullPolicy: IfNotPresent
+
+ingress:
+  enabled: false
+  className: ""
+  host: vote.local
+  annotations: {}
+  tls: []
+
+web:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: magdysalem/voting-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+worker:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: magdysalem/voting-worker
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+redis:
+  enabled: true
+  architecture: standalone
+  master:
+    persistence:
+      enabled: false
+
+postgresql:
+  enabled: true
+  auth:
+    username: postgres
+    password: postgres
+    database: votes
+  primary:
+    persistence:
+      enabled: false

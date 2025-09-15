@@ -1,0 +1,9 @@
+app:
+  title: "Example Voting App - Config from ConfigMap"
+  features:
+    showResults: true
+    useCache: true
+backend:
+  redisHost: "redis-svc"
+  postgresHost: "postgres-svc"
+  database: "votes"

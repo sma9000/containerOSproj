@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-web
+  labels: { app: vote-web }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-web }
+  template:
+    metadata:
+      labels: { app: vote-web }
+    spec:
+      containers:
+      - name: web
+        image: 
+        ports:
+        - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-worker
+  labels: { app: vote-worker }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-worker }
+  template:
+    metadata:
+      labels: { app: vote-worker }
+    spec:
+      containers:
+      - name: worker
+        image: 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-redis
+  labels: { app: vote-redis }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-redis }
+  template:
+    metadata:
+      labels: { app: vote-redis }
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        args: ["--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-postgres
+  labels: { app: vote-postgres }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vote-postgres }
+  template:
+    metadata:
+      labels: { app: vote-postgres }
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - { name: POSTGRES_USER, value: "postgres" }
+        - { name: POSTGRES_PASSWORD, value: "postgres" }
+        - { name: POSTGRES_DB, value: "votes" }
+        ports:
+        - containerPort: 5432
