@@ -67,6 +67,5 @@ runs:
   - name: Create multiarch manifest
     shell: bash
     run: |
-      docker --config ~/.docker manifest create ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }} ${{ inputs.registry_endpoint 
-}}/${{ inputs.image_name }}:linux-${{ env.BRANCH }}
+      docker --config ~/.docker manifest create ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }} ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:linux-${{ env.BRANCH }}
       docker --config ~/.docker manifest push ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }}
