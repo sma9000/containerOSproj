@@ -44,9 +44,11 @@ runs:
   - name: Build Docker image
     shell: bash
     run: |
-      docker build -t ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }} \
+      docker build \
+        -t ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }} \
         -f ${{ inputs.dockerfile_path }} \
-        ./Code/Homework/src
+        .
+    working-directory: ./Code/Homework/src
 
   - name: Push Docker image
     shell: bash
