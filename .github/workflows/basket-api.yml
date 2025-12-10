@@ -30,12 +30,4 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     
-    - name: Build and Push
-      uses: ./.github/workflows/composite/build-push
-      with:
-        service: ${{ env.SERVICE }}
-        registry_host: docker.io
-        registry_endpoint: sma9000
-        image_name: ${{ env.IMAGE }}
-        registry_username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        registry_password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    
