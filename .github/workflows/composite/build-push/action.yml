@@ -14,6 +14,9 @@ inputs:
   image_name:
     description: "Name of image"
     required: true
+  dockerfile_path:                    # ADD THIS
+    description: "Path to Dockerfile" # ADD THIS
+    required: true                    # ADD THIS
   registry_username:
     description: "Registry username"
     required: true
@@ -38,18 +41,14 @@ runs:
       echo "BRANCH=$currentbranch" >> $GITHUB_ENV
     shell: bash
 
-  - name: Compose build ${{ inputs.service }}
+  - name: Build Docker image
     shell: bash
-    run: docker compose build ${{ inputs.service }}
-    working-directory: ./Code/Homework/src
-    env:
-      TAG: ${{ env.BRANCH }}
-      REGISTRY: ${{ inputs.registry_endpoint }}
+    run: |
+      docker build -t ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }} \
+        -f ${{ inputs.dockerfile_path }} \
+        ./Code/Homework/src
 
-  - name: Compose push ${{ inputs.service }}
+  - name: Push Docker image
     shell: bash
-    run: docker compose push ${{ inputs.service }}
-    working-directory: ./Code/Homework/src
-    env:
-      TAG: ${{ env.BRANCH }}
-      REGISTRY: ${{ inputs.registry_endpoint }}
+    run: |
+      docker push ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }}
