@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webstatus
+  labels:
+    app.kubernetes.io/name: webstatus
+    app.kubernetes.io/part-of: eshop
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: webstatus
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: grpc
+      port: 81
+      targetPort: 81

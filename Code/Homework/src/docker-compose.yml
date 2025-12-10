@@ -1,4 +1,4 @@
-version: '3.4'
+#version: '3.4'
 
 services:
 
@@ -18,42 +18,42 @@ services:
     image: rabbitmq:3-management-alpine
 
   identity-api:
-    image: 
+    image: sma9000/identity-api:latest
     depends_on:
       - sqldata
 
   basket-api:
-    image: 
+    image: sma9000/basket-api:latest
     depends_on:
       - basketdata
       - identity-api
       - rabbitmq
 
   catalog-api:
-    image: 
+    image: sma9000/catalog-api:latest
     depends_on:
       - sqldata
       - rabbitmq
 
   ordering-api:
-    image: 
+    image: sma9000/ordering-api:latest
     depends_on:
       - sqldata
       - rabbitmq
 
   ordering-backgroundtasks:
-    image: 
+    image: sma9000/ordering-backgroundtasks:latest
     depends_on:
       - sqldata
       - rabbitmq
 
   payment-api:
-    image: 
+    image: sma9000/payment-api:latest
     depends_on:
       - rabbitmq
 
   webhooks-api:
-    image: 
+    image: sma9000/webhooks-api:latest
     depends_on:
       - sqldata
 
@@ -61,7 +61,7 @@ services:
     image: envoyproxy/envoy:v1.11.1
 
   mobileshoppingagg:
-    image: 
+    image: sma9000/gateway-mobil-api:latest
     depends_on:
       - nosqldata
       - sqldata
@@ -72,7 +72,7 @@ services:
       - basket-api
 
   webshoppingagg:
-    image: 
+    image: sma9000/gateway-web-api:latest
     depends_on:
       - nosqldata
       - sqldata
@@ -83,7 +83,7 @@ services:
       - basket-api
 
   ordering-signalrhub:
-    image: 
+    image: sma9000/ordering-signalrhub:latest
     depends_on:
       - nosqldata
       - sqldata
@@ -94,22 +94,22 @@ services:
       - basket-api
 
   webstatus:
-    image: 
+    image: sma9000/webstatus:latest
 
   webspa:
-    image: 
+    image: sma9000/webspa:latest
     depends_on:
       - webshoppingagg
       - webshoppingapigw
 
   webmvc:
-    image: 
+    image: sma9000/webmvc:latest
     depends_on:
       - webshoppingagg
       - webshoppingapigw
 
   webhooks-client:
-    image: 
+    image: sma9000/webhooks-api:latest
     depends_on:
       - webhooks-api
 

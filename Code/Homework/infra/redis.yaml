@@ -1,0 +1,64 @@
+# 1) PVC for Redis (basket data)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: eshop-data
+  labels:
+    app.kubernetes.io/name: redis-data-pvc
+    app.kubernetes.io/part-of: eshop
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# 2) Deployment (updated to mount the PVC at /data)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: eshop-data
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server","--appendonly","yes"]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: redis-data-pvc
+---
+# 3) Service (unchanged)
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: eshop-data
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379

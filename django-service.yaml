@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"assignment3-django-service","namespace":"default"},"spec":{"ports":[{"port":8000,"protocol":"TCP","targetPort":8000}],"selector":{"pod":"assignment3-django-deploy"},"type":"NodePort"}}
+  creationTimestamp: "2025-11-07T18:35:44Z"
+  name: assignment3-django-service
+  namespace: default
+  resourceVersion: "486"
+  uid: 07c33468-5e7c-45fa-8d0b-54312d565424
+spec:
+  clusterIP: 10.101.188.153
+  clusterIPs:
+  - 10.101.188.153
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - nodePort: 32710
+    port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    pod: assignment3-django-deploy
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

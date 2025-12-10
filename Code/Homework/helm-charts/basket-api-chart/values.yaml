@@ -1,0 +1,93 @@
+# values.yaml
+# Default values for basket-api
+replicaCount: 1
+
+image:
+  repository: sma9000/basket-api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+# Namespace to deploy to (from Week 11)
+namespace: eshop-apis
+
+# Service account (from Week 11)
+serviceAccount:
+  create: true
+  name: ""
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  grpcPort: 81
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Autoscaling configuration (from Week 12)
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Ingress configuration (from Week 10)
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: basket-api.eshop-apis
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Probes configuration (from Week 9)
+probes:
+  liveness:
+    enabled: true
+    path: /hc
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readiness:
+    enabled: true
+    path: /hc
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+# Application configuration
+environment: Development
+connectionString: "redis.eshop-data"
+PicBaseUrl: "http://webshoppingapigw.eshop-gateways/c/api/v1/basket/items/[0]/pic/"
+EventBusConnection: "rabbitmq.eshop-data"
+UseCustomizationData: true
+AzureServiceBusEnabled: false
+AzureStorageEnabled: false
+GRPC_PORT: 81
+PORT: 80
+PATH_BASE: /basket-api
+
+# Node selector, tolerations, and affinity
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network Policy (Bonus)
+networkPolicy:
+  enabled: false
+httpRoute:
+  enabled: false

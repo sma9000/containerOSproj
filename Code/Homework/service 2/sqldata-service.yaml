@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sqldata
+  labels:
+    app.kubernetes.io/name: sqldata
+    app.kubernetes.io/part-of: eshop
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: sqldata
+  ports:
+    - name: p1433
+      port: 1433
+      targetPort: 1433

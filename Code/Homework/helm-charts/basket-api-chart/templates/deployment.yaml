@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "basket-api.fullname" . }}
+  namespace: {{ .Values.namespace | default "default" }}
+  labels:
+    {{- include "basket-api.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "basket-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "basket-api.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "basket-api.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: grpc
+              containerPort: 81
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.environment }}
+            - name: ConnectionString
+              value: {{ .Values.connectionString }}
+            - name: PicBaseUrl
+              value: {{ .Values.PicBaseUrl }}  
+            - name: EventBusConnection
+              value: {{ .Values.EventBusConnection }}  
+            - name: UseCustomizationData
+              value: {{ printf "%v" .Values.UseCustomizationData  | quote }}
+            - name: AzureServiceBusEnabled
+              value: {{ printf "%v" .Values.AzureServiceBusEnabled | quote }}  
+            - name: AzureStorageEnabled
+              value: {{ printf "%v" .Values.AzureStorageEnabled | quote }}  
+            - name: GRPC_PORT
+              value: {{ printf "%v" .Values.GRPC_PORT | quote }}  
+            - name: PORT
+              value: {{ printf "%v" .Values.PORT | quote }}  
+            - name: PATH_BASE
+              value: {{ .Values.PATH_BASE | quote }}  
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.probes.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          {{- end }}
+          {{- if .Values.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          {{- end }}

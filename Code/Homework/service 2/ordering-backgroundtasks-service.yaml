@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ordering-backgroundtasks
+  labels:
+    app.kubernetes.io/name: ordering-backgroundtasks
+    app.kubernetes.io/part-of: eshop
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ordering-backgroundtasks
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: grpc
+      port: 81
+      targetPort: 81

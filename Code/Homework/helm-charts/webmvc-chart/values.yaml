@@ -1,0 +1,98 @@
+replicaCount: 1
+
+image:
+  repository: sma9000/webmvc
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+namespace: eshop-frontend
+
+serviceAccount:
+  create: true
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  # Remove grpcPort - webmvc doesn't use gRPC
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: webmvc.eshop-frontend
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+probes:
+  liveness:
+    enabled: false
+    path: /hc
+    initialDelaySeconds: 60
+    periodSeconds: 10
+  readiness:
+    enabled: false
+    path: /hc
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+environment: Development
+ASPNETCORE_URLS: "http://0.0.0.0:80"
+ConnectionString: "Server=sqldata.eshop-data;Database=Microsoft.eShopOnContainers.Services.webmvcDb;User Id=sa;Password=Pass@word"
+IdentityUrl: "http://identity-api.eshop-apis"
+IdentityUrlExternal: "http://localhost:5105"
+EventBusConnection: "rabbitmq.eshop-data"
+UseCustomizationData: "True"
+AzureServiceBusEnabled: "False"
+CheckUpdateTime: "30000"
+UseLoadTest: "False"
+PATH_BASE: "/webmvc"
+GRPC_PORT: "81"
+PORT: "80"
+BasketUrl: "http://basket-api.eshop-apis"
+CatalogUrl: "http://catalog-api.eshop-apis"
+OrderingUrl: "http://ordering-api.eshop-apis"
+WebhooksUrl: "http://webhooks-api.eshop-apis"
+PaymentUrl: "http://payment-api.eshop-apis"
+MarketingUrl: "http://webshoppingapigw.default.svc.cluster.local"
+LocationsUrl: "http://webshoppingapigw.default.svc.cluster.local"
+BasketUrlHC: "http://basket-dev-basket-api.eshop-apis/hc"
+CatalogUrlHC: "http://catalog-dev-catalog-api.eshop-apis/hc"
+OrderingUrlHC: "http://ordering-dev-ordering-api.eshop-apis/hc"
+IdentityUrlHC: "http://identity-api.eshop-apis/hc"
+PaymentUrlHC: "http://payment-api.eshop-apis/hc"
+MarketingUrlHC: "http://webshoppingapigw.default.svc.cluster.local/hc"
+LocationsUrlHC: "http://webshoppingapigw.default.svc.cluster.local/hc"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: false
+
+httpRoute:
+  enabled: false

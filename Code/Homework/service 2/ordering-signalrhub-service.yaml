@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ordering-signalrhub
+  labels:
+    app.kubernetes.io/name: ordering-signalrhub
+    app.kubernetes.io/part-of: eshop
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ordering-signalrhub
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: grpc
+      port: 81
+      targetPort: 81

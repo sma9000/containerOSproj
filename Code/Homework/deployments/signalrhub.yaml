@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ordering-signalrhub
+  namespace: eshop-background
+  labels:
+    app.kubernetes.io/name: ordering-signalrhub
+    app.kubernetes.io/part-of: eshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ordering-signalrhub
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ordering-signalrhub
+        app.kubernetes.io/part-of: eshop
+    spec:
+      serviceAccountName: eshop-developer
+      containers:
+      - name: ordering-signalrhub
+        image: sma9000/ordering-signalrhub:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        - containerPort: 81
+        livenessProbe:
+          httpGet:
+            path: /hc
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /hc
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 3
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Development
+        - name: ASPNETCORE_URLS
+          value: http://0.0.0.0:80
+        - name: ConnectionString
+          value: Server=sqldata;Database=Microsoft.eShopOnContainers.Services.OrderingDb;User Id=sa;Password=Pass@word
+        - name: identityUrl
+          value: http://identity-api
+        - name: IdentityUrlExternal
+          value: http://localhost:5105
+        - name: EventBusConnection
+          value: rabbitmq
+        - name: UseCustomizationData
+          value: "True"
+        - name: AzureServiceBusEnabled
+          value: "False"
+        - name: CheckUpdateTime
+          value: "30000"
+        - name: UseLoadTest
+          value: "False"
+        - name: Serilog__MinimumLevel__Override__Microsoft.eShopOnContainers.BuildingBlocks.EventBusRabbitMQ
+          value: Verbose
+        - name: Serilog__MinimumLevel__Override__ordering-signalrhub-api
+          value: Verbose
+        - name: PATH_BASE
+          value: /ordering-signalrhub
+        - name: GRPC_PORT
+          value: "81"
+        - name: PORT
+          value: "80"

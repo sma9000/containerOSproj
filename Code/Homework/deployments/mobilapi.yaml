@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-mobil-api
+  namespace: eshop-gateways
+  labels:
+    app.kubernetes.io/name: gateway-mobil-api
+    app.kubernetes.io/part-of: eshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gateway-mobil-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gateway-mobil-api
+        app.kubernetes.io/part-of: eshop
+    spec:
+      serviceAccountName: eshop-developer
+      containers:
+      - name: gateway-mobil-api
+        image: sma9000/gateway-mobil-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        - containerPort: 81
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Development
+        - name: ASPNETCORE_URLS
+          value: http://0.0.0.0:80
+        - name: ConnectionString
+          value: Server=sqldata;Database=Microsoft.eShopOnContainers.Services.gateway-mobilDb;User Id=sa;Password=Pass@word
+        - name: identityUrl
+          value: http://identity-api
+        - name: IdentityUrlExternal
+          value: http://localhost:5105
+        - name: EventBusConnection
+          value: rabbitmq
+        - name: UseCustomizationData
+          value: "True"
+        - name: AzureServiceBusEnabled
+          value: "False"
+        - name: CheckUpdateTime
+          value: "30000"
+        - name: UseLoadTest
+          value: "False"
+        - name: Serilog__MinimumLevel__Override__Microsoft.eShopOnContainers.BuildingBlocks.EventBusRabbitMQ
+          value: Verbose
+        - name: Serilog__MinimumLevel__Override__gateway-mobil-api
+          value: Verbose
+        - name: PATH_BASE
+          value: /gateway-mobil-api
+        - name: GRPC_PORT
+          value: "81"
+        - name: PORT
+          value: "80"
+        # ✅ ADD THESE BELOW
+        - name: urls__basket
+          value: http://basket-api
+        - name: urls__catalog
+          value: http://catalog-api
+        - name: urls__ordering
+          value: http://ordering-api
+        - name: urls__identity
+          value: http://identity-api
+        # Optional (if app needs)
+        - name: urls__webhooks
+          value: http://webhooks
+        - name: urls__signalr
+          value: http://ordering-signalrhub
+        - name: urls__basket
+          value: http://basket-api
+        - name: urls__catalog
+          value: http://catalog-api
+        - name: urls__ordering
+          value: http://ordering-api
+        - name: urls__identity
+          value: http://identity-api
+
+        # Also add the "legacy" names some eShop builds expect
+        - name: BasketUrl
+          value: http://basket-api
+        - name: CatalogUrl
+          value: http://catalog-api
+        - name: OrderingUrl
+          value: http://ordering-api
+        - name: IdentityUrl
+          value: http://identity-api
+        # Required by Mobile.Bff.Shopping aggregator
+        - name: urls__basket
+          value: http://basket-api
+        - name: urls__catalog
+          value: http://catalog-api
+        - name: urls__ordering
+          value: http://ordering-api
+        - name: urls__identity
+          value: http://identity-api
+        - name: urls__webhooks
+          value: http://webhooks
+        - name: urls__signalr
+          value: http://ordering-signalrhub
+        # (Some builds also read the legacy names; safe to include both.)
+        - name: BasketUrl
+          value: http://basket-api
+        - name: CatalogUrl
+          value: http://catalog-api
+        - name: OrderingUrl
+          value: http://ordering-api
+        - name: IdentityUrl
+          value: http://identity-api
+        # ✅ END OF ADD
+        volumeMounts:
+        - name: gw-config
+          mountPath: /etc/envoy
+          readOnly: true
+
+      volumes:
+      - name: gw-config
+        configMap:
+          name: webshoppingapigw-config
+          items:
+          - key: envoy.yaml
+            path: envoy.yaml

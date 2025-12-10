@@ -1,0 +1,30 @@
+# vpa-recommendations.yaml
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: catalog-api-vpa
+  namespace: eshop-apis
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: catalog-api
+  updatePolicy:
+    updateMode: "Off"  # Only provide recommendations
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: payment-api-vpa
+  namespace: eshop-apis
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment-api
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: payment-api
+      controlledResources: ["memory"]  # Only manage memory, not CPU

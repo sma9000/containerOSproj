@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webmvc.fullname" . }}
+  namespace: {{ .Values.namespace | default "default" }}
+  labels:
+    {{- include "webmvc.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "webmvc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "webmvc.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "webmvc.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.environment }}
+            - name: ASPNETCORE_URLS
+              value: {{ .Values.ASPNETCORE_URLS }}
+            - name: ConnectionString
+              value: {{ .Values.ConnectionString }}
+            - name: IdentityUrl
+              value: {{ .Values.IdentityUrl }}
+            - name: IdentityUrlExternal
+              value: {{ .Values.IdentityUrlExternal }}
+            - name: EventBusConnection
+              value: {{ .Values.EventBusConnection }}
+            - name: UseCustomizationData
+              value: {{ .Values.UseCustomizationData | quote }}
+            - name: AzureServiceBusEnabled
+              value: {{ .Values.AzureServiceBusEnabled | quote }}
+            - name: CheckUpdateTime
+              value: {{ .Values.CheckUpdateTime | quote }}
+            - name: UseLoadTest
+              value: {{ .Values.UseLoadTest | quote }}
+            - name: PATH_BASE
+              value: {{ .Values.PATH_BASE }}
+            - name: GRPC_PORT
+              value: {{ .Values.GRPC_PORT | quote }}
+            - name: PORT
+              value: {{ .Values.PORT | quote }}
+            - name: BasketUrl
+              value: {{ .Values.BasketUrl }}
+            - name: CatalogUrl
+              value: {{ .Values.CatalogUrl }}
+            - name: OrderingUrl
+              value: {{ .Values.OrderingUrl }}
+            - name: WebhooksUrl
+              value: {{ .Values.WebhooksUrl }}
+            - name: PaymentUrl
+              value: {{ .Values.PaymentUrl }}
+            - name: MarketingUrl
+              value: {{ .Values.MarketingUrl }}
+            - name: LocationsUrl
+              value: {{ .Values.LocationsUrl }}
+            - name: BasketUrlHC
+              value: {{ .Values.BasketUrlHC }}
+            - name: CatalogUrlHC
+              value: {{ .Values.CatalogUrlHC }}
+            - name: OrderingUrlHC
+              value: {{ .Values.OrderingUrlHC }}
+            - name: IdentityUrlHC
+              value: {{ .Values.IdentityUrlHC }}
+            - name: PaymentUrlHC
+              value: {{ .Values.PaymentUrlHC }}
+            - name: MarketingUrlHC
+              value: {{ .Values.MarketingUrlHC }}
+            - name: LocationsUrlHC
+              value: {{ .Values.LocationsUrlHC }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.probes.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          {{- end }}
+          {{- if .Values.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          {{- end }}

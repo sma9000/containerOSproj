@@ -1,0 +1,27 @@
+namespace: eshop-prod
+replicaCount: 3
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+environment: Production
+connectionString: "Server=sql-prod.company.com;Database=CatalogDb;User=cataloguser;Password=${DB_PASSWORD}"
+EventBusConnection: rabbitmq.eshop-data
+UseCustomizationData: true
+AzureServiceBusEnabled: true
+AzureStorageEnabled: true
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: catalog-api.company.com
+      paths:
+        - path: /
+          pathType: Prefix

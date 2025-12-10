@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhooks-client
+  namespace: eshop-background
+  labels:
+    app.kubernetes.io/name: webhooks-client
+    app.kubernetes.io/part-of: eshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webhooks-client
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webhooks-client
+        app.kubernetes.io/part-of: eshop
+    spec:
+      serviceAccountName: eshop-developer
+      containers:
+        - name: webhooks-client
+          image: sma9000/webhooks-client:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+            - containerPort: 81
+          livenessProbe:
+            httpGet:
+              path: /hc
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /hc
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 3
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://0.0.0.0:80
+            - name: Token
+              value: 6168DB8D-DC58-4094-AF24-483278923590
+            - name: IdentityUrl
+              value: http://identity-api
+            - name: CallBackUrl
+              value: http://webhooks-client
+            - name: WebhooksUrl
+              value: http://webhooks-api
+            - name: SelfUrl
+              value: http://webhooks-client/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhooks-client
+  labels:
+    app.kubernetes.io/name: webhooks-client
+    app.kubernetes.io/part-of: eshop
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: webhooks-client
+  ports:
+    - name: p80
+      port: 80
+      targetPort: 80

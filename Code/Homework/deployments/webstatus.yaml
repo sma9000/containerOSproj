@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webstatus
+  namespace: eshop-monitoring
+  labels:
+    app.kubernetes.io/name: webstatus
+    app.kubernetes.io/part-of: eshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webstatus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webstatus
+        app.kubernetes.io/part-of: eshop
+    spec:
+      serviceAccountName: eshop-readonly
+      containers:
+      - name: webstatus
+        image: sma9000/webstatus:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 80
+          - containerPort: 81
+
+        # Probes hit the app on the SAME base path it uses
+        livenessProbe:
+          httpGet:
+            path: /webstatus/hc
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /webstatus/hc
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 3
+
+        env:
+          - name: ASPNETCORE_ENVIRONMENT
+            value: Development
+          - name: ASPNETCORE_URLS
+            value: http://0.0.0.0:80
+          - name: PATH_BASE
+            value: /webstatus
+
+          # Tell WebStatus which service to monitor
+          - name: HealthChecks-UI__HealthChecks__0__Name
+            value: catalog-api
+          - name: HealthChecks-UI__HealthChecks__0__Uri
+            value: http://catalog-api/hc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webstatus
+  labels:
+    app.kubernetes.io/name: webstatus
+    app.kubernetes.io/part-of: eshop
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: webstatus
+  ports:
+    - port: 80
+      targetPort: 80

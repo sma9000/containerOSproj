@@ -1,0 +1,58 @@
+# rbac-bindings.yaml
+# Bind API developer role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: api-developer-binding
+  namespace: eshop-apis
+subjects:
+- kind: ServiceAccount
+  name: eshop-developer
+  namespace: eshop-apis
+roleRef:
+  kind: Role
+  name: api-developer
+  apiGroup: rbac.authorization.k8s.io
+---
+# Bind frontend developer role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: frontend-developer-binding
+  namespace: eshop-frontend
+subjects:
+- kind: ServiceAccount
+  name: eshop-frontend-deployer
+  namespace: eshop-frontend
+roleRef:
+  kind: Role
+  name: frontend-developer
+  apiGroup: rbac.authorization.k8s.io
+---
+# Bind DevOps cluster role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eshop-devops-binding
+subjects:
+- kind: ServiceAccount
+  name: eshop-devops
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: eshop-devops
+  apiGroup: rbac.authorization.k8s.io
+---
+# Bind readonly cluster role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eshop-readonly-binding
+subjects:
+- kind: ServiceAccount
+  name: eshop-readonly
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: eshop-readonly
+  apiGroup: rbac.authorization.k8s.io

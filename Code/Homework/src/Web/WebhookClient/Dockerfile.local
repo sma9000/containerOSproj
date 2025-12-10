@@ -1,0 +1,18 @@
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+
+# copy only the src tree so any intra-src refs resolve
+COPY src/ ./
+
+WORKDIR /src/Web/WebhookClient
+RUN dotnet restore WebhookClient.csproj
+RUN dotnet publish WebhookClient.csproj -c Release -o /app/publish
+
+# --- runtime stage ---
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+EXPOSE 80
+ENV ASPNETCORE_URLS=http://0.0.0.0:80
+ENTRYPOINT ["dotnet", "WebhookClient.dll"]

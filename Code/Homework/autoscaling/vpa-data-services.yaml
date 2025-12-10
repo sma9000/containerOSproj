@@ -1,0 +1,45 @@
+# vpa-data-services.yaml
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: sql-data-vpa
+  namespace: eshop-data
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sql-data
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: sql-server
+      maxAllowed:
+        cpu: 2
+        memory: 4Gi
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+      controlledResources: ["cpu", "memory"]
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: rabbitmq-vpa
+  namespace: eshop-data
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rabbitmq
+  updatePolicy:
+    updateMode: "Initial"  # Only set resources for new pods
+  resourcePolicy:
+    containerPolicies:
+    - containerName: rabbitmq
+      maxAllowed:
+        cpu: 1
+        memory: 2Gi
+      minAllowed:
+        cpu: 50m
+        memory: 64Mi

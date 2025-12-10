@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-links
+  # namespace: default   # add if you use a custom namespace, and keep it consistent
+data:
+  PURCHASE_URL: "http://webshoppingapigw"
+  ESHOP_STORAGE_CATALOG_URL: "http://webshoppingapigw/c/api/v1/catalog/items/[0]/pic/"
+  CatalogUrl: "http://catalog-api/catalog-api"
+  PurchaseUrl: "http://webshoppingapigw"
+  PicBaseUrl: "http://webshoppingapigw/c/api/v1/catalog/items/[0]/pic/"
