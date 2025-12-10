@@ -1,0 +1,42 @@
+name: identity-api
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - main
+    paths:
+    - Code/Homework/src/BuildingBlocks/**
+    - Code/Homework/src/Services/Identity/**
+    - .github/workflows/identity-api.yml
+  
+  pull_request:
+    branches:
+    - main
+    paths:
+    - Code/Homework/src/BuildingBlocks/**
+    - Code/Homework/src/Services/Identity/**
+    - .github/workflows/identity-api.yml
+
+env:
+  SERVICE: identity-api
+  IMAGE: identity.api
+
+jobs:
+  BuildLinux:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    
+    - name: Build and Push
+      uses: ./.github/workflows/composite/build-push
+      with:
+        service: ${{ env.SERVICE }}
+        registry_host: docker.io
+        registry_endpoint: sma9000
+        image_name: ${{ env.IMAGE }}
+        dockerfile_path: Services/Identity/Identity.API/Dockerfile
+        registry_username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        registry_password: ${{ secrets.DOCKER_HUB_TOKEN }}
