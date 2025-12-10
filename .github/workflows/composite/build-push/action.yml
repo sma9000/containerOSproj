@@ -41,16 +41,10 @@ runs:
       echo "BRANCH=$currentbranch" >> $GITHUB_ENV
     shell: bash
 
-  - name: Build Docker image
-    shell: bash
-    run: |
-      docker build \
-        -t ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }} \
-        -f ${{ inputs.dockerfile_path }} \
-        .
-    working-directory: ./Code/Homework/src
-
-  - name: Push Docker image
-    shell: bash
-    run: |
-      docker push ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }}
+ - name: Build and push Docker image
+    uses: docker/build-push-action@v2
+    with:
+      context: ./Code/Homework/src
+      file: ./Code/Homework/src/${{ inputs.dockerfile_path }}
+      push: true
+      tags: ${{ inputs.registry_endpoint }}/${{ inputs.image_name }}:${{ env.BRANCH }}
