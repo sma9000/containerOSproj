@@ -37,3 +37,19 @@ runs:
       echo "running on $currentbranch"
       echo "BRANCH=$currentbranch" >> $GITHUB_ENV
     shell: bash
+
+  - name: Compose build ${{ inputs.service }}
+    shell: bash
+    run: sudo -E docker-compose build ${{ inputs.service }}
+    working-directory: ./Code/Homework/src
+    env:
+      TAG: ${{ env.BRANCH }}
+      REGISTRY: ${{ inputs.registry_endpoint }}
+
+  - name: Compose push ${{ inputs.service }}
+    shell: bash
+    run: sudo -E docker-compose push ${{ inputs.service }}
+    working-directory: ./Code/Homework/src
+    env:
+      TAG: ${{ env.BRANCH }}
+      REGISTRY: ${{ inputs.registry_endpoint }}
