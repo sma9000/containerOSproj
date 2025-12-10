@@ -37,5 +37,6 @@ jobs:
         registry_host: docker.io
         registry_endpoint: sma9000
         image_name: ${{ env.IMAGE }}
+        dockerfile_path: Services/Catalog/Catalog.API/Dockerfile
         registry_username: ${{ secrets.DOCKER_HUB_USERNAME }}
         registry_password: ${{ secrets.DOCKER_HUB_TOKEN }}
