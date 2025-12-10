@@ -1,5 +1,5 @@
 name: "Build and push image"
-description: "Builds and pushes an image to a registry"
+description: "Builds and pushes an image to a registry for ci/cd"
 
 inputs:
   service:
